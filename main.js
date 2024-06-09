@@ -88,65 +88,44 @@ app.post("/upload", async (req, res) => {
   });
 });
 
-// Create and Save a new User
-app.post("/users", async (req, res) => {
+app.get("/userWallet/:wallet", async (req, res) => {
   try {
-    const { filecid, signature, wallet } = req.body;
-    // Validate request
-    if (!filecid) {
-      res.status(400).send({ message: "filecid can not be empty!" });
-      return;
-    }
+    const userWallet = req.params.wallet;
+    const data = await UserModel.find({ walletAddress: userWallet });
 
-    if (!signature) {
-      res.status(400).send({ message: "signature can not be empty!" });
-      return;
-    }
-
-    if (!wallet) {
-      res.status(400).send({ message: "wallet can not be empty!" });
-      return;
-    }
-
-    // Create a User
-    const user = new UserModel({
-      filecid: req.body.filecid,
-      signature: req.body.signature,
-      walletAddress: req.body.wallet,
-    });
-
-    // Save User in the database
-    try {
-      const data = await user.save();
-      res.send(data);
-    } catch (err) {
-      res.status(500).send({
-        message: err.message || "Some error occurred while creating the User.",
-      });
-    }
+    res.send(data);
   } catch (error) {
-    return res.status(500).send({ message: error.message });
+    res.status(400).send({ message: error.message });
   }
 });
 
 app.post("/saveSigners", async (req, res) => {
   // save an array in the database
-  const { signers } = req.body;
+  const signers = req.body;
+
   // run all loop and save each signer
-  for (var signer in signers) {
+
+  for (var signer of signers) {
+    console.log(signer);
+
+    if (!signer.address || !signer.hash) {
+      continue;
+    }
     //  check if signer exists
     const data = await UserModel.find({
-      walletAddress: wallet,
+      walletAddress: signer.address,
       fileHash: signer.hash,
     });
 
     if (data.length > 0) {
       // edit signature
       const data = await UserModel.findOneAndUpdate(
-        { walletAddress: wallet },
+        { walletAddress: signer.address },
         { signature: signer.signature }
       );
+      continue;
     } else {
+      console.log("saving signer");
       // save new signer
       const user = new UserModel({
         fileHash: signer.hash,
@@ -168,23 +147,6 @@ app.post("/saveSigners", async (req, res) => {
   }
 
   res.send({ message: "success" });
-});
-
-app.get("/users", async (req, res) => {
-  try {
-    const wallet = req.query.wallet;
-
-    try {
-      const data = await UserModel.find({ walletAddress: wallet });
-      res.send(data);
-    } catch (err) {
-      res.status(500).send({
-        message: err.message || "Some error occurred while retrieving users.",
-      });
-    }
-  } catch (error) {
-    return res.status(500).send({ message: error.message });
-  }
 });
 
 app.listen(port, () => {

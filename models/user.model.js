@@ -12,7 +12,8 @@ const UserSchema = mongoose.Schema(
       createdAt: "created_at",
       updatedAt: "updated_at",
     },
-  }
+  },
+  { collection: "signers" }
 );
 
 module.exports = mongoose.model("User", UserSchema);
