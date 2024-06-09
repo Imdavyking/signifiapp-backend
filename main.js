@@ -42,6 +42,7 @@ app.post("/upload", async (req, res) => {
       if (req.file == undefined) {
         res.status(400).send({ message: "No file selected!" });
       } else {
+        req.file.originalname;
         let result = await ApillionStore.uploadFile(req.file);
         console.log(result);
         res.send({ message: "File uploaded successfully!" });
