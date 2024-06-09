@@ -39,6 +39,21 @@ app.use(express.static("public"));
 
 mongoose.set("debug", process.env.NODE_ENV != "production");
 
+// get file from hash using public folder {hash}.ext
+app.get("/hash/:hash", async (req, res) => {
+  const hash = req.params.hash;
+  //  get files in public folder
+  const files = fs.readdirSync("./public");
+
+  const file = files.find((file) => file.startsWith(hash));
+
+  console.log("./public/" + file);
+
+  if (file) {
+    const filePath = path.resolve(__dirname, "./public/" + file);
+    res.sendFile(filePath);
+  }
+});
 // upload file
 app.post("/upload", async (req, res) => {
   upload(req, res, async (err) => {
