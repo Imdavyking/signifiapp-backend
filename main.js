@@ -10,7 +10,12 @@ const port = process.env.PORT || 3100;
 
 app.use(cors());
 app.use(bodyParser.json());
-
+const storage = multer.diskStorage({
+  destination: "./uploads/", // Directory to save the uploaded files
+  filename: function (req, file, cb) {
+    cb(null, file.fieldname + "-" + Date.now());
+  },
+});
 // Initialize upload
 const upload = multer({
   storage: storage,
@@ -23,15 +28,6 @@ const upload = multer({
 function checkFileType(file, cb) {
   return cb(null, true);
 }
-const storage = multer.diskStorage({
-  destination: "./uploads/", // Directory to save the uploaded files
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
-  },
-});
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
