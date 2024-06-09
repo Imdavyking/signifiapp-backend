@@ -1,10 +1,12 @@
-import { Storage, LogLevel, FileStatus } from "@apillon/sdk";
+const { Storage, LogLevel, FileStatus } = require("@apillon/sdk");
+require("dotenv").config();
+// use require
 
 class ApillionStore {
   static uploadFile = async (fileBuffer) => {
     const storage = new Storage({
-      key: config.public.APP_STORE_KEY,
-      secret: config.public.APP_STORE_SECRET,
+      key: process.env.APP_STORE_KEY,
+      secret: process.env.APP_STORE_SECRET,
       logLevel: LogLevel.NONE,
     });
 
@@ -12,7 +14,7 @@ class ApillionStore {
     await storage.listBuckets({ limit: 5 });
 
     // create and instance of a bucket directly through uuid
-    const bucket = storage.bucket("uuid");
+    const bucket = storage.bucket(process.env.BUCKET_UUID);
 
     const results = await bucket.uploadFiles(
       [
@@ -28,3 +30,5 @@ class ApillionStore {
     console.log(results);
   };
 }
+
+module.exports = { ApillionStore };

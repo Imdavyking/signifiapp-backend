@@ -6,6 +6,7 @@ const UserModel = require("./models/user.model");
 const app = express();
 require("dotenv").config();
 const multer = require("multer");
+const { ApillionStore } = require("./utils/ipfs_util");
 const port = process.env.PORT || 3100;
 
 app.use(cors());
@@ -37,14 +38,16 @@ mongoose.connect(process.env.MONGO_URI, {
 mongoose.set("debug", process.env.NODE_ENV != "production");
 
 // upload file
-app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
+app.post("/upload", async (req, res) => {
+  upload(req, res, async (err) => {
     if (err) {
       res.status(400).send({ message: err.message });
     } else {
       if (req.file == undefined) {
         res.status(400).send({ message: "No file selected!" });
       } else {
+        let result = await ApillionStore.uploadFile(req.file);
+        console.log(result);
         res.send({ message: "File uploaded successfully!" });
       }
     }
