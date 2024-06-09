@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 
 const UserSchema = mongoose.Schema(
   {
-    filecid: String,
+    fileHash: String,
     signature: String,
-    wallet: String,
+    walletAddress: String,
   },
   {
     timestamps: {
