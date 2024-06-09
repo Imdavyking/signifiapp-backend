@@ -5,10 +5,33 @@ const cors = require("cors");
 const UserModel = require("./models/user.model");
 const app = express();
 require("dotenv").config();
-const port = process.env.PORT || 3000;
+const multer = require("multer");
+const port = process.env.PORT || 3100;
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Initialize upload
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 1000000 }, // Limit file size to 1MB
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+}).single("ipfs_file"); // The name 'myFile' should match the form field name
+
+function checkFileType(file, cb) {
+  return cb(null, true);
+}
+const storage = multer.diskStorage({
+  destination: "./uploads/", // Directory to save the uploaded files
+  filename: function (req, file, cb) {
+    cb(
+      null,
+      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+    );
+  },
+});
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -16,6 +39,21 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 mongoose.set("debug", process.env.NODE_ENV != "production");
+
+// upload file
+app.post("/upload", (req, res) => {
+  upload(req, res, (err) => {
+    if (err) {
+      res.status(400).send({ message: err.message });
+    } else {
+      if (req.file == undefined) {
+        res.status(400).send({ message: "No file selected!" });
+      } else {
+        res.send({ message: "File uploaded successfully!" });
+      }
+    }
+  });
+});
 
 // Create and Save a new User
 app.post("/users", async (req, res) => {
@@ -65,4 +103,8 @@ app.get("/users", async (req, res) => {
       message: err.message || "Some error occurred while retrieving users.",
     });
   }
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
