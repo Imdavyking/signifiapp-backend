@@ -8,6 +8,9 @@ require("dotenv").config();
 const multer = require("multer");
 const { ApillionStore } = require("./utils/ipfs_util");
 const port = process.env.PORT || 3100;
+const fs = require("fs");
+const { sha256 } = require("./utils/sha256");
+const path = require("path");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -32,7 +35,7 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // use uploads folder
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 mongoose.set("debug", process.env.NODE_ENV != "production");
 
@@ -45,7 +48,16 @@ app.post("/upload", async (req, res) => {
       if (req.file == undefined) {
         res.status(400).send({ message: "No file selected!" });
       } else {
-        req.file.originalname;
+        const filePath = "./public/" + req.file.filename;
+
+        const buffer = fs.readFileSync(filePath);
+
+        const hash = await sha256(buffer);
+
+        const extension = path.extname(req.file.originalname);
+
+        fs.writeFileSync("./public/" + hash + extension, buffer);
+
         let result = await ApillionStore.uploadFile(req.file);
         res.send({ message: "File uploaded successfully!" });
       }
