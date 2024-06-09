@@ -41,92 +41,149 @@ mongoose.set("debug", process.env.NODE_ENV != "production");
 
 // get file from hash using public folder {hash}.ext
 app.get("/hash/:hash", async (req, res) => {
-  const hash = req.params.hash;
-  //  get files in public folder
-  const files = fs.readdirSync("./public");
+  try {
+    const hash = req.params.hash;
+    //  get files in public folder
+    const files = fs.readdirSync("./public");
 
-  const file = files.find((file) => file.startsWith(hash));
+    const file = files.find((file) => file.startsWith(hash));
 
-  console.log("./public/" + file);
+    console.log("./public/" + file);
 
-  if (file) {
-    const filePath = path.resolve(__dirname, "./public/" + file);
-    res.sendFile(filePath);
+    if (file) {
+      const filePath = path.resolve(__dirname, "./public/" + file);
+      res.sendFile(filePath);
+    }
+  } catch (error) {
+    res.status(400).send({ message: error.message });
   }
 });
 // upload file
 app.post("/upload", async (req, res) => {
   upload(req, res, async (err) => {
-    if (err) {
-      res.status(400).send({ message: err.message });
-    } else {
-      if (req.file == undefined) {
-        res.status(400).send({ message: "No file selected!" });
+    try {
+      if (err) {
+        res.status(400).send({ message: err.message });
       } else {
-        const filePath = "./public/" + req.file.filename;
+        if (req.file == undefined) {
+          res.status(400).send({ message: "No file selected!" });
+        } else {
+          const filePath = "./public/" + req.file.filename;
 
-        const buffer = fs.readFileSync(filePath);
+          const buffer = fs.readFileSync(filePath);
 
-        const hash = await sha256(buffer);
+          const hash = await sha256(buffer);
 
-        const extension = path.extname(req.file.originalname);
+          const extension = path.extname(req.file.originalname);
 
-        fs.writeFileSync("./public/" + hash + extension, buffer);
+          fs.writeFileSync("./public/" + hash + extension, buffer);
 
-        let result = await ApillionStore.uploadFile(req.file);
-        res.send({ message: "File uploaded successfully!" });
+          let result = await ApillionStore.uploadFile(req.file);
+          res.send({ message: "File uploaded successfully!" });
+        }
       }
+    } catch (error) {
+      res.status(400).send({ message: error.message });
     }
   });
 });
 
 // Create and Save a new User
 app.post("/users", async (req, res) => {
-  const { filecid, signature, wallet } = req.body;
-  // Validate request
-  if (!filecid) {
-    res.status(400).send({ message: "filecid can not be empty!" });
-    return;
-  }
-
-  if (!signature) {
-    res.status(400).send({ message: "signature can not be empty!" });
-    return;
-  }
-
-  if (!wallet) {
-    res.status(400).send({ message: "wallet can not be empty!" });
-    return;
-  }
-
-  // Create a User
-  const user = new UserModel({
-    filecid: req.body.filecid,
-    signature: req.body.signature,
-    walletAddress: req.body.wallet,
-  });
-
-  // Save User in the database
   try {
-    const data = await user.save();
-    res.send(data);
-  } catch (err) {
-    res.status(500).send({
-      message: err.message || "Some error occurred while creating the User.",
+    const { filecid, signature, wallet } = req.body;
+    // Validate request
+    if (!filecid) {
+      res.status(400).send({ message: "filecid can not be empty!" });
+      return;
+    }
+
+    if (!signature) {
+      res.status(400).send({ message: "signature can not be empty!" });
+      return;
+    }
+
+    if (!wallet) {
+      res.status(400).send({ message: "wallet can not be empty!" });
+      return;
+    }
+
+    // Create a User
+    const user = new UserModel({
+      filecid: req.body.filecid,
+      signature: req.body.signature,
+      walletAddress: req.body.wallet,
     });
+
+    // Save User in the database
+    try {
+      const data = await user.save();
+      res.send(data);
+    } catch (err) {
+      res.status(500).send({
+        message: err.message || "Some error occurred while creating the User.",
+      });
+    }
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
 });
 
-app.get("/users", async (req, res) => {
-  const wallet = req.query.wallet;
-
-  try {
-    const data = await UserModel.find({ walletAddress: wallet });
-    res.send(data);
-  } catch (err) {
-    res.status(500).send({
-      message: err.message || "Some error occurred while retrieving users.",
+app.post("/saveSigners", async (req, res) => {
+  // save an array in the database
+  const { signers } = req.body;
+  // run all loop and save each signer
+  for (var signer in signers) {
+    //  check if signer exists
+    const data = await UserModel.find({
+      walletAddress: wallet,
+      fileHash: signer.hash,
     });
+
+    if (data.length > 0) {
+      // edit signature
+      const data = await UserModel.findOneAndUpdate(
+        { walletAddress: wallet },
+        { signature: signer.signature }
+      );
+    } else {
+      // save new signer
+      const user = new UserModel({
+        fileHash: signer.hash,
+        signature: signer.signature,
+        walletAddress: signer.address,
+      });
+
+      const data = await user.save();
+
+      // Save User in the database
+      try {
+      } catch (err) {
+        res.status(500).send({
+          message:
+            err.message || "Some error occurred while creating the User.",
+        });
+      }
+    }
+  }
+
+  res.send({ message: "success" });
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    const wallet = req.query.wallet;
+
+    try {
+      const data = await UserModel.find({ walletAddress: wallet });
+      res.send(data);
+    } catch (err) {
+      res.status(500).send({
+        message: err.message || "Some error occurred while retrieving users.",
+      });
+    }
+  } catch (error) {
+    return res.status(500).send({ message: error.message });
   }
 });
 
