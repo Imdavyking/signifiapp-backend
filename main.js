@@ -12,7 +12,7 @@ const port = process.env.PORT || 3100;
 app.use(cors());
 app.use(bodyParser.json());
 const storage = multer.diskStorage({
-  destination: "./upload/", // Directory to save the uploaded files
+  destination: "./public/", // Directory to save the uploaded files
   filename: function (req, file, cb) {
     cb(null, file.fieldname + "-" + Date.now());
   },
@@ -30,6 +30,9 @@ mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+// use uploads folder
+app.use(express.static('public'));
 
 mongoose.set("debug", process.env.NODE_ENV != "production");
 

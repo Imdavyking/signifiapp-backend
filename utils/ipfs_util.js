@@ -16,7 +16,7 @@ class ApillionStore {
   };
   static uploadFile = async (fileBuffer) => {
     //read file from path
-    const filePath = "./upload/" + fileBuffer.filename;
+    const filePath = "./public/" + fileBuffer.filename;
 
     const buffer = fs.readFileSync(filePath);
 
