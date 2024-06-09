@@ -73,7 +73,7 @@ app.post("/users", async (req, res) => {
   const user = new UserModel({
     filecid: req.body.filecid,
     signature: req.body.signature,
-    wallet: req.body.wallet,
+    walletAddress: req.body.wallet,
   });
 
   // Save User in the database
@@ -91,7 +91,7 @@ app.get("/users", async (req, res) => {
   const wallet = req.query.wallet;
 
   try {
-    const data = await UserModel.find({ wallet: wallet });
+    const data = await UserModel.find({ walletAddress: wallet });
     res.send(data);
   } catch (err) {
     res.status(500).send({
