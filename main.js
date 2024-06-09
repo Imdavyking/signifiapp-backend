@@ -22,13 +22,9 @@ const upload = multer({
   storage: storage,
   limits: { fileSize: 1000000 }, // Limit file size to 1MB
   fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
+    return cb(null, true);
   },
 }).single("ipfs_file"); // The name 'myFile' should match the form field name
-
-function checkFileType(file, cb) {
-  return cb(null, true);
-}
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,

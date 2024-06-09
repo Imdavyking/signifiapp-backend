@@ -1,6 +1,6 @@
 const { Storage, LogLevel, FileStatus } = require("@apillon/sdk");
 require("dotenv").config();
-// use require
+const { sha256 } = require("./sha256.js");
 
 class ApillionStore {
   static uploadFile = async (fileBuffer) => {
@@ -19,8 +19,8 @@ class ApillionStore {
     const results = await bucket.uploadFiles(
       [
         {
-          fileName: "contract.json",
-          contentType: "application/json",
+          fileName: sha256(fileBuffer.buffer),
+          contentType: fileBuffer.mimetype,
           content: fileBuffer,
         },
       ],
