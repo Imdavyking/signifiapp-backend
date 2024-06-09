@@ -35,7 +35,7 @@ class ApillionStore {
       { wrapWithDirectory: false }
     );
 
-    console.log(results);
+    return results;
   };
 }
 

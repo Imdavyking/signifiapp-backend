@@ -44,7 +44,6 @@ app.post("/upload", async (req, res) => {
       } else {
         req.file.originalname;
         let result = await ApillionStore.uploadFile(req.file);
-        console.log(result);
         res.send({ message: "File uploaded successfully!" });
       }
     }
