@@ -11,7 +11,7 @@ const port = process.env.PORT || 3100;
 app.use(cors());
 app.use(bodyParser.json());
 const storage = multer.diskStorage({
-  destination: "./uploads/", // Directory to save the uploaded files
+  destination: "./upload/", // Directory to save the uploaded files
   filename: function (req, file, cb) {
     cb(null, file.fieldname + "-" + Date.now());
   },
