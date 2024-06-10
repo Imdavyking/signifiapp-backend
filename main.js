@@ -106,7 +106,7 @@ app.get("/userWallet/:wallet", async (req, res) => {
         fileHash: fileHash,
         walletAddress: { $ne: userWallet },
       });
-      documents.push(signers);
+      documents.push(...signers);
     }
 
     res.send(documents);
@@ -149,6 +149,8 @@ app.post("/saveSigners", async (req, res) => {
     try {
       decodeAddress(signer.address);
     } catch (error) {
+      console.log(error);
+      console.log(signer.address);
       continue;
     }
     const data = await UserModel.find({
