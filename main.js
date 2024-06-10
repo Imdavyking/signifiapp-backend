@@ -12,6 +12,7 @@ const fs = require("fs");
 const { sha256 } = require("./utils/sha256");
 const path = require("path");
 const { sign } = require("crypto");
+const { decodeAddress } = require("@polkadot/keyring");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -91,10 +92,24 @@ app.post("/upload", async (req, res) => {
 
 app.get("/userWallet/:wallet", async (req, res) => {
   try {
+    let documents = [];
     const userWallet = req.params.wallet;
+    // get all users that have same hash
     const data = await UserModel.find({ walletAddress: userWallet });
+    documents = [...data];
 
-    res.send(data);
+    // iterate through the data and get the file hash
+    for (let i = 0; i < data.length; i++) {
+      // find everyother user with the same file hash not userWallet
+      const fileHash = data[i].fileHash;
+      const signers = await UserModel.find({
+        fileHash: fileHash,
+        walletAddress: { $ne: userWallet },
+      });
+      documents.push(signers);
+    }
+
+    res.send(documents);
   } catch (error) {
     res.status(400).send({ message: error.message });
   }
@@ -130,6 +145,12 @@ app.post("/saveSigners", async (req, res) => {
     if (!signer.address || !signer.hash) {
       continue;
     }
+
+    try {
+      decodeAddress(signer.address);
+    } catch (error) {
+      continue;
+    }
     const data = await UserModel.find({
       walletAddress: signer.address,
       fileHash: signer.hash,
@@ -143,7 +164,6 @@ app.post("/saveSigners", async (req, res) => {
       );
       continue;
     } else {
-      console.log("saving signer");
       // save new signer
       const user = new UserModel({
         fileHash: signer.hash,
