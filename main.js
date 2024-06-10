@@ -11,6 +11,7 @@ const port = process.env.PORT || 3100;
 const fs = require("fs");
 const { sha256 } = require("./utils/sha256");
 const path = require("path");
+const { sign } = require("crypto");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -103,15 +104,32 @@ app.post("/saveSigners", async (req, res) => {
   // save an array in the database
   const signers = req.body;
 
-  // run all loop and save each signer
+  if (!signers) {
+    return res.status(400).send({ message: "No signers found" });
+  }
 
-  for (var signer of signers) {
-    console.log(signer);
-
+  for (let signer of signers) {
     if (!signer.address || !signer.hash) {
       continue;
     }
-    //  check if signer exists
+
+    // Check if there are existing records with the given file hash
+    const existingRecords = await UserModel.find({ fileHash: signer.hash });
+
+    if (existingRecords.length > 0) {
+      // If existing records are found, ensure the length of signers is 1
+      if (signers.length > 1) {
+        return res.status(400).send({
+          message: `Signers must have a length of 1 for file hash ${signer.hash}`,
+        });
+      }
+    }
+  }
+
+  for (var signer of signers) {
+    if (!signer.address || !signer.hash) {
+      continue;
+    }
     const data = await UserModel.find({
       walletAddress: signer.address,
       fileHash: signer.hash,
